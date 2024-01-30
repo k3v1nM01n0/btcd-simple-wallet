@@ -6,4 +6,4 @@ This is a toy Bitcoin wallet created using the `bitcoinlib` library in Python. I
 
 ```bash
 python3 main.py
-``````
+```

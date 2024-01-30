@@ -1,15 +1,34 @@
 from bitcoinlib.wallets import Wallet
 from bitcoinlib.transactions import Transaction
-from bitcoinlib.keys import HDKey
 
 class BitcoinWallet:
     def __init__(self, wallet_name="my_wallet"):
-        self.wallet = Wallet.create(wallet_name)
-        self.address = self.wallet.get_key().address()
-    
-    def generate_address(self):
-        new_key = self.wallet.get_key(index=len(self.wallet.keys))
-        self.address = new_key.address()
+        try:
+            # Try to load an existing wallet
+            self.wallet = Wallet(wallet_name)
+        except Exception as e:
+            # If the wallet doesn't exist, create a new one
+            if "Wallet not found" in str(e):
+                self.wallet = Wallet.create(wallet_name)
+            else:
+                raise e
+
+        self.address = self.wallet.get_key().address
+
+    def generate_address(self, address_type='P2PKH'):
+        if address_type not in ['P2PK', 'P2PKH', 'P2SH', 'P2WPKH', 'P2WSH', 'P2TR']:
+            raise ValueError("Invalid address type")
+
+        # Get the list of keys and select the last one
+        keys = self.wallet.get_keys()
+        if keys:
+            new_key = keys[-1]
+        else:
+            new_key = self.wallet.get_key()
+        
+        # Derive subkey with specified type
+        new_key = new_key.subkey(address_type)
+        self.address = new_key.address
         return self.address
     
     def check_balance(self):
@@ -35,8 +54,20 @@ if __name__ == "__main__":
     print("Current Address:", my_wallet.address)
     print("Current Balance:", my_wallet.check_balance())
 
-    new_address = my_wallet.generate_address()
-    print("New Address:", new_address)
+    # Generate different address types
+    new_p2pk_address = my_wallet.generate_address('P2PK')
+    new_p2pkh_address = my_wallet.generate_address('P2PKH')
+    new_p2sh_address = my_wallet.generate_address('P2SH')
+    new_p2wpkh_address = my_wallet.generate_address('P2WPKH')
+    new_p2wsh_address = my_wallet.generate_address('P2WSH')
+    new_p2tr_address = my_wallet.generate_address('P2TR')
+
+    print("New P2PK Address:", new_p2pk_address)
+    print("New P2PKH Address:", new_p2pkh_address)
+    print("New P2SH Address:", new_p2sh_address)
+    print("New P2WPKH Address:", new_p2wpkh_address)
+    print("New P2WSH Address:", new_p2wsh_address)
+    print("New P2TR Address:", new_p2tr_address)
 
     # Simulate receiving funds
     my_wallet.receive_funds()
